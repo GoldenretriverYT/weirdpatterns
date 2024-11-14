@@ -173,23 +173,6 @@
         createLEDs();
         window.addEventListener('resize', createLEDs);
 
-        // Create snowflakes
-        function createSnowflake() {
-            const snowflake = document.createElement('div');
-            snowflake.className = 'snowflake';
-            snowflake.style.left = Math.random() * 100 + 'vw';
-            snowflake.style.opacity = Math.random();
-            snowflake.style.fontSize = (Math.random() * 10 + 5) + 'px';
-            snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            snowflake.innerHTML = '❅';
-            document.body.appendChild(snowflake);
-
-            // Remove snowflake after animation
-            snowflake.addEventListener('animationend', () => {
-                snowflake.remove();
-            });
-        }
-
         // Snow accumulation system
         const snowPile = document.getElementById('snow-pile');
         const maxSnowflakes = 150;
@@ -215,7 +198,7 @@
             // alternatively, add a timeout to prevent missing animationend events from causing the site to slowdown
             setTimeout(() => {
                 snowflake.remove()
-            }, speed * 1.5);
+            }, speed * 1500);
         }
 
         function addToSnowPile(xPosition) {
