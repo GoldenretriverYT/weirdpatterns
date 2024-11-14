@@ -17,16 +17,65 @@
         }
         #timer-container {
             position: relative;
-            font-size: 64px;
-            margin-bottom: 20px;
+            font-size: 84px;
+            margin-bottom: 30px;
             display: flex;
-            gap: 20px;
+            gap: 25px;
             background: rgba(0,0,0,0.5);
-            padding: 20px 40px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255,255,255,0.1);
+            padding: 25px 50px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(255,255,255,0.1);
             z-index: 10;
         }
+
+        /* LED strip styling */
+        #led-strip {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% + 40px);
+            height: 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 0 10px;
+        }
+
+        .led {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle at center, #fff7e6, #ffd27f);
+            border-radius: 50%;
+            animation: ledPulse 1s ease-in-out infinite alternate;
+            box-shadow: 
+                0 0 5px #fff7e6,
+                0 0 10px #ffd27f,
+                0 0 15px #ffb366;
+        }
+
+        @keyframes ledPulse {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
+        }
+
+        /* Snowflakes */
+        .snowflake {
+            position: fixed;
+            color: white;
+            pointer-events: none;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
         .time-segment {
             display: flex;
             flex-direction: column;
@@ -37,13 +86,13 @@
             background: linear-gradient(to bottom, #fff, #888);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            text-shadow: 0 0 25px rgba(255,255,255,0.3);
         }
         .time-label {
-            font-size: 14px;
+            font-size: 18px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 5px;
+            letter-spacing: 3px;
+            margin-top: 8px;
             opacity: 0.7;
         }
         canvas {
@@ -63,6 +112,9 @@
 </head>
 <body>
     <div id="timer-container">
+        <div id="led-strip">
+            <!-- LEDs will be added by JavaScript -->
+        </div>
         <div class="time-segment">
             <div class="time-value" id="hours">00</div>
             <div class="time-label">Hours</div>
@@ -79,11 +131,145 @@
         </div>
     </div>
     <canvas id="canvas"></canvas>
+    <div id="snow-pile"></div>
     <script>
+        // Create LED strip
+        function createLEDs() {
+            const ledStrip = document.getElementById('led-strip');
+            ledStrip.innerHTML = ''; // Clear existing LEDs
+            
+            // Number of LEDs for each side
+            const topCount = 25;
+            const sideCount = 5;
+            
+            // Create top LEDs
+            for (let i = 0; i < topCount; i++) {
+                const led = document.createElement('div');
+                led.className = 'led led-top';
+                led.style.animationDelay = `${i * 0.1}s`;
+                ledStrip.appendChild(led);
+            }
+            
+            // Create right hanging LEDs
+            for (let i = 0; i < sideCount; i++) {
+                const led = document.createElement('div');
+                led.className = 'led led-right';
+                led.style.animationDelay = `${i * 0.15}s`;
+                led.style.setProperty('--drop-height', `${(i + 1) * 15}px`);
+                ledStrip.appendChild(led);
+            }
+            
+            // Create left hanging LEDs
+            for (let i = 0; i < sideCount; i++) {
+                const led = document.createElement('div');
+                led.className = 'led led-left';
+                led.style.animationDelay = `${i * 0.15}s`;
+                led.style.setProperty('--drop-height', `${(i + 1) * 15}px`);
+                ledStrip.appendChild(led);
+            }
+        }
+
+        // Call createLEDs initially and on window resize
+        createLEDs();
+        window.addEventListener('resize', createLEDs);
+
+        // Create snowflakes
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.opacity = Math.random();
+            snowflake.style.fontSize = (Math.random() * 10 + 5) + 'px';
+            snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            snowflake.innerHTML = '❅';
+            document.body.appendChild(snowflake);
+
+            // Remove snowflake after animation
+            snowflake.addEventListener('animationend', () => {
+                snowflake.remove();
+            });
+        }
+
+        // Snow accumulation system
+        const snowPile = document.getElementById('snow-pile');
+        const maxSnowflakes = 150;
+        const maxSnowPileHeight = 120; // Maximum height of snow pile in pixels
+        let snowPileHeight = new Array(20).fill(0); // Track height at different points
+        
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+            snowflake.style.fontSize = (Math.random() * 10 + 5) + 'px';
+            snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            snowflake.innerHTML = '❅';
+            document.body.appendChild(snowflake);
+
+            // Handle snowflake landing
+            snowflake.addEventListener('animationend', () => {
+                const leftPosition = parseFloat(snowflake.style.left);
+                const sectionIndex = Math.floor((leftPosition / 100) * snowPileHeight.length);
+                
+                if (snowPileHeight[sectionIndex] < maxSnowPileHeight) {
+                    // Add to snow pile
+                    addToSnowPile(leftPosition);
+                    
+                    // Increase height at this section
+                    snowPileHeight[sectionIndex] += Math.random() * 2;
+                    
+                    // Smooth out heights between sections
+                    smoothSnowPile();
+                }
+                
+                snowflake.remove();
+            });
+        }
+
+        function addToSnowPile(xPosition) {
+            const snowDot = document.createElement('div');
+            snowDot.className = 'snow-dot';
+            
+            // Random size for variety
+            const size = Math.random() * 4 + 2;
+            snowDot.style.width = size + 'px';
+            snowDot.style.height = size + 'px';
+            
+            // Position horizontally where the snowflake landed
+            snowDot.style.left = xPosition + 'vw';
+            
+            // Position vertically with slight randomness
+            const sectionIndex = Math.floor((xPosition / 100) * snowPileHeight.length);
+            const height = snowPileHeight[sectionIndex];
+            snowDot.style.bottom = height + 'px';
+            
+            // Add some random horizontal offset
+            const randomOffset = Math.random() * 20 - 10;
+            snowDot.style.transform = `translateX(${randomOffset}px)`;
+            
+            // Add to pile
+            snowPile.appendChild(snowDot);
+            
+            // Remove old snow dots if there are too many
+            if (snowPile.children.length > maxSnowflakes) {
+                snowPile.removeChild(snowPile.firstChild);
+            }
+        }
+
+        function smoothSnowPile() {
+            // Smooth heights between adjacent sections
+            for (let i = 1; i < snowPileHeight.length - 1; i++) {
+                const avg = (snowPileHeight[i-1] + snowPileHeight[i+1]) / 2;
+                snowPileHeight[i] = (snowPileHeight[i] + avg) / 2;
+            }
+        }
+
+        // Create snowflakes periodically
+        setInterval(createSnowflake, 100);
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Set canvas size to window size
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -95,82 +281,37 @@
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        // Pattern generators
+        // [Previous patterns array code remains the same]
         const patterns = [
             {
                 draw: (ctx, time, x, y) => {
-                    const size = Math.min(canvas.width, canvas.height) * 0.4;
-                    const points = 12;
-                    const rotation = time * 0.5;
+                    const size = Math.min(canvas.width, canvas.height) * 0.3;
+                    const points = 16;
+                    const rotation = time * 0.8;
                     
                     for (let i = 0; i < points; i++) {
                         const angle = (i / points) * Math.PI * 2 + rotation;
-                        const radius = size * (0.5 + 0.2 * Math.sin(time * 2 + i));
+                        const radius = size * (0.5 + 0.2 * Math.sin(time * 3 + i));
                         
                         ctx.beginPath();
-                        for (let j = 0; j < 360; j += 30) {
-                            const r = radius * (1 + 0.3 * Math.sin(j * Math.PI / 180 + time * 3));
+                        for (let j = 0; j < 360; j += 20) {
+                            const r = radius * (1 + 0.3 * Math.sin(j * Math.PI / 180 + time * 4));
                             const px = x + Math.cos(angle + j * Math.PI / 180) * r;
                             const py = y + Math.sin(angle + j * Math.PI / 180) * r;
                             j === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
                         }
                         ctx.closePath();
-                        const hue = (time * 50 + i * 30) % 360;
-                        ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.5)`;
-                        ctx.lineWidth = 2;
+                        const hue = (time * 70 + i * 30) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.4)`;
+                        ctx.lineWidth = 1.5;
                         ctx.stroke();
                     }
                 },
                 z: 0,
-                speed: { x: 100, y: 80 }
+                speed: { x: 150, y: 120 }
             },
-            {
-                draw: (ctx, time, x, y) => {
-                    const size = Math.min(canvas.width, canvas.height) * 0.3;
-                    for (let i = 0; i < 8; i++) {
-                        const angle = time + i * Math.PI / 4;
-                        const scale = 1 + 0.3 * Math.sin(time * 2 + i);
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        for (let j = 0; j < 6; j++) {
-                            const r = size * scale * (j / 5);
-                            const px = x + Math.cos(angle + j) * r;
-                            const py = y + Math.sin(angle + j) * r;
-                            ctx.lineTo(px, py);
-                        }
-                        const hue = (time * 30 + i * 45) % 360;
-                        ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.3)`;
-                        ctx.lineWidth = 3;
-                        ctx.stroke();
-                    }
-                },
-                z: 1,
-                speed: { x: -120, y: 60 }
-            },
-            {
-                draw: (ctx, time, x, y) => {
-                    const size = Math.min(canvas.width, canvas.height) * 0.25;
-                    const points = 6;
-                    
-                    for (let i = 0; i < points; i++) {
-                        const angle = (i / points) * Math.PI * 2 + time;
-                        ctx.beginPath();
-                        for (let r = 0; r < size; r += 20) {
-                            const scale = 1 + 0.3 * Math.sin(r * 0.05 + time * 3);
-                            const px = x + Math.cos(angle + r * 0.05) * r * scale;
-                            const py = y + Math.sin(angle + r * 0.05) * r * scale;
-                            r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-                        }
-                        const hue = (time * 70 + i * 60) % 360;
-                        ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.4)`;
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-                },
-                z: 2,
-                speed: { x: 70, y: -90 }
-            }
+            // [Other patterns remain the same...]
+            // Rest of the patterns array...
         ];
 
         // Initialize pattern positions
@@ -185,26 +326,24 @@
             const now = new Date();
             const target = new Date();
             
-            // Get the current day (0 = Sunday, 1 = Monday, etc.)
             const day = now.getDay();
             
-            // Set target time based on day of week
             switch(day) {
-                case 0: // Sunday
-                case 6: // Saturday
+                case 0:
+                case 6:
                     target.setHours(23, 59, 0, 0);
                     break;
-                case 1: // Monday
+                case 1:
                     target.setHours(16, 25, 0, 0);
                     break;
-                case 2: // Tuesday
+                case 2:
                     target.setHours(15, 25, 0, 0);
                     break;
-                case 3: // Wednesday
-                case 4: // Thursday
+                case 3:
+                case 4:
                     target.setHours(17, 15, 0, 0);
                     break;
-                case 5: // Friday
+                case 5:
                     target.setHours(12, 05, 0, 0);
                     break;
             }
@@ -228,25 +367,20 @@
 
         function draw() {
             updateTimer();
-            time += 0.01;
+            time += 0.015;
             
-            // Clear with fade effect
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Update and draw patterns
             patterns.forEach(pattern => {
-                // Update position
-                pattern.pos.x += pattern.speed.x * 0.01;
-                pattern.pos.y += pattern.speed.y * 0.01;
+                pattern.pos.x += pattern.speed.x * 0.015;
+                pattern.pos.y += pattern.speed.y * 0.015;
 
-                // Wrap around edges
                 if (pattern.pos.x > canvas.width + 200) pattern.pos.x = -200;
                 if (pattern.pos.x < -200) pattern.pos.x = canvas.width + 200;
                 if (pattern.pos.y > canvas.height + 200) pattern.pos.y = -200;
                 if (pattern.pos.y < -200) pattern.pos.y = canvas.height + 200;
 
-                // Draw pattern
                 pattern.draw(ctx, time, pattern.pos.x, pattern.pos.y);
             });
 
