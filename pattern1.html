@@ -184,7 +184,30 @@
         function updateTimer() {
             const now = new Date();
             const target = new Date();
-            target.setHours(17, 15, 0, 0);
+            
+            // Get the current day (0 = Sunday, 1 = Monday, etc.)
+            const day = now.getDay();
+            
+            // Set target time based on day of week
+            switch(day) {
+                case 0: // Sunday
+                case 6: // Saturday
+                    target.setHours(23, 59, 0, 0);
+                    break;
+                case 1: // Monday
+                    target.setHours(16, 25, 0, 0);
+                    break;
+                case 2: // Tuesday
+                    target.setHours(15, 25, 0, 0);
+                    break;
+                case 3: // Wednesday
+                case 4: // Thursday
+                    target.setHours(17, 15, 0, 0);
+                    break;
+                case 5: // Friday
+                    target.setHours(12, 05, 0, 0);
+                    break;
+            }
             
             if (now > target) {
                 document.getElementById('hours').textContent = "00";
