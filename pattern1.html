@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Layer Hypnotic Patterns</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: 'Courier New', monospace;
+        }
+        #timer-container {
+            position: relative;
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+        .time-segment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .time-value {
+            font-weight: bold;
+            background: linear-gradient(to bottom, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .time-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+        canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .separator {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div id="timer-container">
+        <div class="time-segment">
+            <div class="time-value" id="hours">00</div>
+            <div class="time-label">Hours</div>
+        </div>
+        <div class="separator">:</div>
+        <div class="time-segment">
+            <div class="time-value" id="minutes">00</div>
+            <div class="time-label">Minutes</div>
+        </div>
+        <div class="separator">:</div>
+        <div class="time-segment">
+            <div class="time-value" id="seconds">00</div>
+            <div class="time-label">Seconds</div>
+        </div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let time = 0;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Pattern generators
+        const patterns = [
+            {
+                draw: (ctx, time, x, y) => {
+                    const size = Math.min(canvas.width, canvas.height) * 0.4;
+                    const points = 12;
+                    const rotation = time * 0.5;
+                    
+                    for (let i = 0; i < points; i++) {
+                        const angle = (i / points) * Math.PI * 2 + rotation;
+                        const radius = size * (0.5 + 0.2 * Math.sin(time * 2 + i));
+                        
+                        ctx.beginPath();
+                        for (let j = 0; j < 360; j += 30) {
+                            const r = radius * (1 + 0.3 * Math.sin(j * Math.PI / 180 + time * 3));
+                            const px = x + Math.cos(angle + j * Math.PI / 180) * r;
+                            const py = y + Math.sin(angle + j * Math.PI / 180) * r;
+                            j === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                        }
+                        ctx.closePath();
+                        const hue = (time * 50 + i * 30) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.5)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                },
+                z: 0,
+                speed: { x: 100, y: 80 }
+            },
+            {
+                draw: (ctx, time, x, y) => {
+                    const size = Math.min(canvas.width, canvas.height) * 0.3;
+                    for (let i = 0; i < 8; i++) {
+                        const angle = time + i * Math.PI / 4;
+                        const scale = 1 + 0.3 * Math.sin(time * 2 + i);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        for (let j = 0; j < 6; j++) {
+                            const r = size * scale * (j / 5);
+                            const px = x + Math.cos(angle + j) * r;
+                            const py = y + Math.sin(angle + j) * r;
+                            ctx.lineTo(px, py);
+                        }
+                        const hue = (time * 30 + i * 45) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.3)`;
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+                },
+                z: 1,
+                speed: { x: -120, y: 60 }
+            },
+            {
+                draw: (ctx, time, x, y) => {
+                    const size = Math.min(canvas.width, canvas.height) * 0.25;
+                    const points = 6;
+                    
+                    for (let i = 0; i < points; i++) {
+                        const angle = (i / points) * Math.PI * 2 + time;
+                        ctx.beginPath();
+                        for (let r = 0; r < size; r += 20) {
+                            const scale = 1 + 0.3 * Math.sin(r * 0.05 + time * 3);
+                            const px = x + Math.cos(angle + r * 0.05) * r * scale;
+                            const py = y + Math.sin(angle + r * 0.05) * r * scale;
+                            r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                        }
+                        const hue = (time * 70 + i * 60) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.4)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                },
+                z: 2,
+                speed: { x: 70, y: -90 }
+            }
+        ];
+
+        // Initialize pattern positions
+        patterns.forEach(p => {
+            p.pos = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height
+            };
+        });
+
+        function updateTimer() {
+            const now = new Date();
+            const target = new Date();
+            target.setHours(17, 15, 0, 0);
+            
+            if (now > target) {
+                document.getElementById('hours').textContent = "00";
+                document.getElementById('minutes').textContent = "00";
+                document.getElementById('seconds').textContent = "00";
+                return;
+            }
+            
+            const diff = target - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+
+        function draw() {
+            updateTimer();
+            time += 0.01;
+            
+            // Clear with fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw patterns
+            patterns.forEach(pattern => {
+                // Update position
+                pattern.pos.x += pattern.speed.x * 0.01;
+                pattern.pos.y += pattern.speed.y * 0.01;
+
+                // Wrap around edges
+                if (pattern.pos.x > canvas.width + 200) pattern.pos.x = -200;
+                if (pattern.pos.x < -200) pattern.pos.x = canvas.width + 200;
+                if (pattern.pos.y > canvas.height + 200) pattern.pos.y = -200;
+                if (pattern.pos.y < -200) pattern.pos.y = canvas.height + 200;
+
+                // Draw pattern
+                pattern.draw(ctx, time, pattern.pos.x, pattern.pos.y);
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+</html>
