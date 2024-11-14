@@ -192,38 +192,30 @@
 
         // Snow accumulation system
         const snowPile = document.getElementById('snow-pile');
-        const maxSnowflakes = 60;
+        const maxSnowflakes = 150;
         const maxSnowPileHeight = 120; // Maximum height of snow pile in pixels
         let snowPileHeight = new Array(20).fill(0); // Track height at different points
         
         function createSnowflake() {
             const snowflake = document.createElement('div');
+            const speed = (Math.random() * 3 + 2);
             snowflake.className = 'snowflake';
             snowflake.style.left = Math.random() * 100 + 'vw';
             snowflake.style.opacity = Math.random() * 0.7 + 0.3;
             snowflake.style.fontSize = (Math.random() * 10 + 5) + 'px';
-            snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            snowflake.style.animationDuration = speed + 's';
             snowflake.innerHTML = '❅';
             document.body.appendChild(snowflake);
 
             // Handle snowflake landing
-            snowflake.addEventListener('animationend', () => {
-                const leftPosition = parseFloat(snowflake.style.left);
-                const sectionIndex = Math.floor((leftPosition / 100) * snowPileHeight.length);
-                
-                if (snowPileHeight[sectionIndex] < maxSnowPileHeight) {
-                    // Add to snow pile
-                    addToSnowPile(leftPosition);
-                    
-                    // Increase height at this section
-                    snowPileHeight[sectionIndex] += Math.random() * 2;
-                    
-                    // Smooth out heights between sections
-                    smoothSnowPile();
-                }
-                
+            snowflake.addEventListener('animationend', () => {                
                 snowflake.remove();
             });
+
+            // alternatively, add a timeout to prevent missing animationend events from causing the site to slowdown
+            setTimeout(() => {
+                snowflake.remove()
+            }, speed * 1.5);
         }
 
         function addToSnowPile(xPosition) {
